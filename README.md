@@ -7,6 +7,17 @@ Portfolio personal (Data Analyst / Business Intelligence) construido con:
 - TailwindCSS
 - Framer Motion
 
+## Variables de entorno
+
+Copia `.env.example` como `.env.local` y agrega tu API key de [Resend](https://resend.com)
+para que el formulario de contacto pueda enviar correos:
+
+```
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+En Vercel, agrega la misma variable en **Project Settings → Environment Variables**.
+
 ## Desarrollo local
 
 ```bash

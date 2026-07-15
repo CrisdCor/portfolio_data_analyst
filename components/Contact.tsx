@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, FormEvent } from "react";
 import { motion } from "framer-motion";
 import Reveal from "./Reveal";
+
+type Status = "idle" | "loading" | "success" | "error";
 
 const socials = [
   { label: "LinkedIn", href: "#" },
@@ -11,6 +14,43 @@ const socials = [
 ];
 
 export default function Contact() {
+  const [status, setStatus] = useState<Status>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMsg("");
+
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem("name") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      message: (form.elements.namedItem("message") as HTMLTextAreaElement).value,
+    };
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const body = await res.json();
+
+      if (!res.ok) {
+        setStatus("error");
+        setErrorMsg(body.error || "Ocurrió un error al enviar el mensaje.");
+        return;
+      }
+
+      setStatus("success");
+      form.reset();
+    } catch {
+      setStatus("error");
+      setErrorMsg("No se pudo conectar con el servidor.");
+    }
+  }
+
   return (
     <section id="contacto" className="relative py-32 border-t border-white/5">
       <div className="container-x grid md:grid-cols-2 gap-16">
@@ -40,16 +80,18 @@ export default function Contact() {
         </Reveal>
 
         <Reveal delay={0.15}>
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="name" className="text-xs text-white/50 font-mono">
                 NOMBRE
               </label>
               <input
                 id="name"
+                name="name"
                 type="text"
                 required
-                className="w-full mt-2 bg-transparent border-b border-white/15 focus:border-signal outline-none py-3 text-white placeholder-white/25 transition-colors focus-ring"
+                disabled={status === "loading"}
+                className="w-full mt-2 bg-transparent border-b border-white/15 focus:border-signal outline-none py-3 text-white placeholder-white/25 transition-colors focus-ring disabled:opacity-50"
                 placeholder="Tu nombre"
               />
             </div>
@@ -59,9 +101,11 @@ export default function Contact() {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
                 required
-                className="w-full mt-2 bg-transparent border-b border-white/15 focus:border-signal outline-none py-3 text-white placeholder-white/25 transition-colors focus-ring"
+                disabled={status === "loading"}
+                className="w-full mt-2 bg-transparent border-b border-white/15 focus:border-signal outline-none py-3 text-white placeholder-white/25 transition-colors focus-ring disabled:opacity-50"
                 placeholder="tucorreo@dominio.com"
               />
             </div>
@@ -71,20 +115,32 @@ export default function Contact() {
               </label>
               <textarea
                 id="message"
+                name="message"
                 required
                 rows={4}
-                className="w-full mt-2 bg-transparent border-b border-white/15 focus:border-signal outline-none py-3 text-white placeholder-white/25 transition-colors resize-none focus-ring"
+                disabled={status === "loading"}
+                className="w-full mt-2 bg-transparent border-b border-white/15 focus:border-signal outline-none py-3 text-white placeholder-white/25 transition-colors resize-none focus-ring disabled:opacity-50"
                 placeholder="Cuéntame sobre tu proyecto..."
               />
             </div>
 
             <motion.button
-              whileHover={{ x: 4 }}
+              whileHover={{ x: status === "loading" ? 0 : 4 }}
               type="submit"
-              className="inline-flex items-center gap-2 bg-signal hover:bg-signal-hot transition-colors text-white text-sm font-medium px-7 py-3.5 rounded-full mt-4 focus-ring"
+              disabled={status === "loading"}
+              className="inline-flex items-center gap-2 bg-signal hover:bg-signal-hot transition-colors text-white text-sm font-medium px-7 py-3.5 rounded-full mt-4 focus-ring disabled:opacity-60"
             >
-              Enviar mensaje
+              {status === "loading" ? "Enviando..." : "Enviar mensaje"}
             </motion.button>
+
+            {status === "success" && (
+              <p className="text-sm text-signal">
+                Mensaje enviado. Te responderé pronto.
+              </p>
+            )}
+            {status === "error" && (
+              <p className="text-sm text-red-400">{errorMsg}</p>
+            )}
           </form>
         </Reveal>
       </div>
